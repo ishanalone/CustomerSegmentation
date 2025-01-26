@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Segmentation Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        .dashboard-card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .visualization-container {
+            padding: 20px;
+            min-height: 400px;
+            width: 100%;
+            position: relative;
+        }
+        .metric-card {
+            padding: 15px;
+            text-align: center;
+            background-color: #ffffff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .segment-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            position: relative;
+        }
+        .insights-iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+            position: relative;
+        }
+        .model-selector {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .model-selector select {
+            padding: 8px 15px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            font-size: 16px;
+            background-color: white;
+        }
+        .timeline-visualization {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <h1 class="text-center mb-4">Customer Segmentation Analysis</h1>
+
+        <!-- Add Model Selector -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="model-selector text-center">
+                    <label for="modelSelect" class="me-2">Select Segmentation Model:</label>
+                    <select id="modelSelect" onchange="switchModel(this.value)">
+                        <option value="kmeans">K-Means Clustering</option>
+                        <option value="rf">Random Forest</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics Row -->
+        <div class="row mb-4" id="key-metrics">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="total-customers">0</div>
+                    <div class="metric-label">Total Customers</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-order-value">₹0</div>
+                    <div class="metric-label">Average Order Value</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="laundry-ratio">0%</div>
+                    <div class="metric-label">Laundry Service Usage</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="dryclean-ratio">0%</div>
+                    <div class="metric-label">Dry Clean Service Usage</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Visualizations -->
+        <div class="row">
+            <!-- Radar Chart -->
+            <div class="col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Segment Characteristics</h5>
+                    </div>
+                    <div class="visualization-container">
+                        <iframe src="/static/radar_chart.html" class="segment-iframe"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spending vs Frequency -->
+            <div class="col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Spending vs Frequency Analysis</h5>
+                    </div>
+                    <div class="visualization-container">
+                        <div id="spending-frequency-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Distribution -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Service Preferences by Segment</h5>
+                    </div>
+                    <div class="visualization-container">
+                        <img src="/static/service_preferences.png" class="img-fluid" alt="Service Preferences">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Segment Distribution</h5>
+                    </div>
+                    <div class="visualization-container">
+                        <iframe src="/static/segment_distributions.html" class="segment-iframe"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Segment Insights Table -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Segment Insights</h5>
+                    </div>
+                    <div class="card-body">
+                        <iframe src="/static/segment_insights.html" class="insights-iframe"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add this after the existing visualizations -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Customer Churn Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Churn Risk Metrics -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="metric-card">
+                                    <div class="metric-value" id="churned-count">0</div>
+                                    <div class="metric-label">Churned Customers</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="metric-card">
+                                    <div class="metric-value" id="high-risk-count">0</div>
+                                    <div class="metric-label">High Risk Customers</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="metric-card">
+                                    <div class="metric-value" id="avg-days-inactive">0</div>
+                                    <div class="metric-label">Avg Days Inactive</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="metric-card">
+                                    <div class="metric-value" id="avg-risk-score">0%</div>
+                                    <div class="metric-label">Average Risk Score</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Churn Visualizations -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="visualization-container">
+                                    <iframe src="/static/churn_risk_distribution.html" class="segment-iframe"></iframe>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="visualization-container">
+                                    <iframe src="/static/churn_risk_scatter.html" class="segment-iframe"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Churn Summary Table -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <iframe src="/static/churn_summary.html" class="insights-iframe"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Analysis Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Business Timeline Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Timeline Summary -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <iframe src="/static/timeline_summary.html" class="insights-iframe"></iframe>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Visualizations -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="visualization-container">
+                                    <iframe src="/static/timeline_trends.html" class="segment-iframe"></iframe>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="visualization-container">
+                                    <iframe src="/static/customer_acquisition.html" class="segment-iframe"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service Distribution Timeline -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="visualization-container">
+                                    <iframe src="/static/service_distribution_timeline.html" class="segment-iframe"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add these variables at the top of your script
+        let currentModel = 'kmeans';
+        const modelFiles = {
+            kmeans: {
+                segments: '/customer_segments.csv',
+                insights: '/static/segment_insights.html',
+                radar: '/static/radar_chart.html',
+                distributions: '/static/segment_distributions.html'
+            },
+            rf: {
+                segments: '/static/rf_customer_segments.csv',
+                insights: '/static/rf_insights.html',
+                radar: '/static/rf_radar_chart.html',
+                distributions: '/static/rf_segment_distributions.html'
+            }
+        };
+
+        async function switchModel(model) {
+            currentModel = model;
+            await loadDashboard();
+        }
+
+        async function loadDashboard() {
+            try {
+                // Load customer data based on selected model
+                const response = await fetch(modelFiles[currentModel].segments);
+                const csvText = await response.text();
+                const customerData = Papa.parse(csvText, { header: true }).data;
+
+                // Update metrics
+                updateKeyMetrics(customerData);
+                
+                // Update visualizations
+                document.querySelector('.segment-iframe').src = modelFiles[currentModel].radar;
+                
+                // Load spending frequency image
+                const spendingImg = new Image();
+                spendingImg.src = currentModel === 'kmeans' ? 
+                    '/static/spending_frequency.png' : 
+                    '/static/rf_spending_frequency.png';
+                spendingImg.className = 'img-fluid';
+                document.getElementById('spending-frequency-chart').innerHTML = '';
+                document.getElementById('spending-frequency-chart').appendChild(spendingImg);
+
+                // Update other visualizations
+                document.querySelector('#segment-distribution-chart iframe').src = 
+                    modelFiles[currentModel].distributions;
+                document.querySelector('#segment-insights iframe').src = 
+                    modelFiles[currentModel].insights;
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // Update key metrics function
+        function updateKeyMetrics(data) {
+            const totalCustomers = data.length;
+            const segmentColumn = currentModel === 'kmeans' ? 'Segment' : 'RF_Segment';
+            
+            const avgOrderValue = data.reduce((sum, row) => 
+                sum + parseFloat(row.Avg_Order_Value || 0), 0) / totalCustomers;
+            const avgLaundryRatio = data.reduce((sum, row) => 
+                sum + parseFloat(row.Laundry_Ratio || 0), 0) / totalCustomers;
+            const avgDryCleanRatio = data.reduce((sum, row) => 
+                sum + parseFloat(row.DryClean_Ratio || 0), 0) / totalCustomers;
+
+            document.getElementById('total-customers').textContent = totalCustomers;
+            document.getElementById('avg-order-value').textContent = 
+                `₹${avgOrderValue.toFixed(2)}`;
+            document.getElementById('laundry-ratio').textContent = 
+                `${(avgLaundryRatio * 100).toFixed(1)}%`;
+            document.getElementById('dryclean-ratio').textContent = 
+                `${(avgDryCleanRatio * 100).toFixed(1)}%`;
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>
